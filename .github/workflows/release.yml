@@ -67,7 +67,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          tail -n 40 mac-build.log | while IFS= read -r line; do
+          tail -n 10 mac-build.log | while IFS= read -r line; do
             echo "::error::$line"
           done < mac-build.log
       - name: Upload macOS artifacts
