@@ -102,7 +102,7 @@ npm run pack
 
 输出位于 `release-latest/`。
 
-构建 macOS DMG 与 ZIP：
+构建 macOS ZIP：
 
 ```bash
 npm run pack:mac
@@ -110,7 +110,7 @@ npm run pack:mac
 
 ### 下载 Windows 便携版
 
-从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 Windows `Amazon.Sales.Bubble.2.4.5.exe`，或下载 macOS Apple Silicon 对应的 DMG/ZIP。
+从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 Windows `Amazon.Sales.Bubble.2.4.6.exe`，或下载 macOS Apple Silicon ZIP。
 
 其他 ERP 的接口字段和路径约定见 [通用 ERP REST 适配说明](docs/CUSTOM_ERP_ADAPTER.md)。
 

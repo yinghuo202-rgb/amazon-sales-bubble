@@ -3,7 +3,9 @@ module.exports = {
   compression: "normal",
   win: { target: "portable", signAndEditExecutable: false },
   mac: {
-    target: ["dmg", "zip"],
+    // ZIP packaging avoids macOS disk-image tooling on hosted runners.
+    // A DMG can still be requested locally with --mac dmg.
+    target: ["zip"],
     category: "public.app-category.business",
     identity: null,
     hardenedRuntime: false,

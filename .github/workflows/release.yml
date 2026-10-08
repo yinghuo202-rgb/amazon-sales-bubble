@@ -51,7 +51,7 @@ jobs:
         run: npm ci
       - name: Verify
         run: npm test
-      - name: Build macOS Apple Silicon DMG and ZIP
+      - name: Build macOS Apple Silicon ZIP
         shell: bash
         run: |
           set -o pipefail
@@ -75,7 +75,6 @@ jobs:
         with:
           name: release-macos-arm64
           path: |
-            release-latest/*.dmg
             release-latest/*.zip
           if-no-files-found: error
 
