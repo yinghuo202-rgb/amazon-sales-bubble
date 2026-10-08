@@ -10,7 +10,7 @@ Windows 桌面悬浮胶囊 · GerpGo OpenAPI · Liquid Glass
 
 <br />
 
-[![Version](https://img.shields.io/badge/version-2.2.0-52677d?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/version-2.2.1-52677d?style=flat-square)](package.json)
 [![Platform](https://img.shields.io/badge/platform-Windows-52677d?style=flat-square)](#快速开始)
 [![Data source](https://img.shields.io/badge/data-GerpGo%20OpenAPI-52677d?style=flat-square)](docs/GERPGO_API_INVENTORY.md)
 [![Tests](https://img.shields.io/badge/tests-35%20passing-668b78?style=flat-square)](VALIDATION.md)
@@ -104,7 +104,7 @@ npm run pack
 
 ### 下载 Windows 便携版
 
-从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon Sales Bubble 2.2.0.exe`，双击即可运行，无需安装。
+从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon Sales Bubble 2.2.1.exe`，双击即可运行，无需安装。
 
 ## 连接 GerpGo
 

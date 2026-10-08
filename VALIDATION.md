@@ -4,7 +4,7 @@
 
 - `npm test`：35 项全部通过，覆盖 GerpGo 认证、官方代理默认 Host、服务端 400 错误透传、签名请求（精确 JSON + App Key 的 MD5、bodyless 请求和未签名 token 交换）、店铺选择过滤（销售 `marketList` 与订单/退款/Review 事件共用 `marketId` 范围）、按店铺本地日期分组请求销售统计、次要资源失败时保留订单事件、订单缺少 `itemPriceAmount` 时使用 `sellingPrice`、CNY 基准汇率到目标币种的换算、店铺/币种/汇率/订单/退款/Review Mapper、店铺表现分页、SQLite 店铺/游标持久化，以及固定 Host、事件先展示再播放总额动画和悬浮位置越界修正。
 - `npm run build`：通过。
-- `npm run pack`：2.2.0 便携包构建通过；归档中的主进程、GerpGo provider、布局模块和 dist 入口与当前源码一致。
+- GitHub Actions 会在 Windows runner 上执行 `npm run pack` 并将 2.2.1 便携包发布到 Release；本地 `npm test` 与 `npm run build` 已通过。
 - `docs/GERPGO_API_INVENTORY.md`：已更新；店铺、销售、汇率、订单和 Review 标记为 `VERIFIED`，退款标记为 `VERIFIED_WITH_LIMITS`。
 - GerpGo 账户的真实店铺列表会在“市场”页逐店展示；销售、订单、退款和 Review 均按选中的 `marketId` 过滤，默认选择所有启用店铺。
 - 浏览器和打包版均验证固定 360 × 100 Host，内部胶囊按 Idle 220×56、Order/Refund 286×64、Review 320×72 居中切换。
