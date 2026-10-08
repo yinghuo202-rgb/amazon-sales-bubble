@@ -33,7 +33,7 @@ class ExchangeRates {
         provider: "Demo fixture — not a market quote",
       });
   }
-  applyGerpGo(rates = [], scope = "live", dates = [new Date().toISOString().slice(0, 10)]) {
+  applyProvider(rates = [], scope = "live", dates = [new Date().toISOString().slice(0, 10)], provider = "Commerce ERP") {
     for (const rate of rates) {
       if (!rate || !rate.from || !rate.to || !Number.isFinite(rate.rate) || rate.rate <= 0) continue;
       for (const date of rate.date ? [rate.date] : dates)
@@ -44,17 +44,20 @@ class ExchangeRates {
           scope,
           rateScaled: scaledRate(rate.rate),
           asOf: rate.effectiveDate || rate.date || date,
-          provider: "GerpGo OpenAPI",
+          provider,
         });
     }
+  }
+  applyGerpGo(rates = [], scope = "live", dates = [new Date().toISOString().slice(0, 10)]) {
+    return this.applyProvider(rates, scope, dates, "GerpGo OpenAPI");
   }
   async ensure(markets, base, source, extra = []) {
     if (source === "demo") {
       this.demo(markets, base, extra);
       return;
     }
-    if (source === "gerpgo")
-      throw Error("尚未加载 GerpGo 汇率，请先连接并同步 GerpGo OpenAPI。");
+    if (source === "gerpgo" || source === "custom")
+      throw Error(`尚未加载${source === "custom" ? " ERP" : " GerpGo"}汇率，请先连接并同步数据源。`);
     for (const r of this.requests(markets, base, extra)) {
       if (this.db.rate(r.date, r.source, r.target, "live")) continue;
       const key = JSON.stringify(r);

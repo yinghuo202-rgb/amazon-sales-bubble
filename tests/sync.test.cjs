@@ -8,6 +8,8 @@ const { flattenStores } = require("../electron/gerpgo/stores.cjs");
 const { Store } = require("../core/store.cjs");
 const { config, normalizeBaseUrl, DEFAULT_BASE_URL } = require("../electron/gerpgo/config.cjs");
 const { GerpGoPoller } = require("../electron/gerpgo/poller.cjs");
+const { GenericRestClient } = require("../electron/custom/client.cjs");
+const { GenericRestDataSource } = require("../electron/custom/datasource.cjs");
 
 test("GerpGo client authenticates with the verified /api_token route and redacts token headers", async () => {
   const calls = [];
@@ -97,6 +99,33 @@ test("GerpGo exchange rates convert CNY quotes into the selected base currency",
   assert.equal(body.condition.monthDate.length, 7);
   assert.equal(rates.find((rate) => rate.from === "USD").rate, 1);
     assert.equal(rates.find((rate) => rate.from === "CAD").rate, 4.86 / 6.78);
+});
+
+test("generic REST ERP adapter normalizes stores, sales and order events", async () => {
+  const calls = [];
+  const fetcher = async (url, options) => {
+    const path = new URL(url).pathname.replace(/^\/api/, "");
+    calls.push({ path, options });
+    const payloads = {
+      "/stores": { data: [{ id: "shop-1", name: "US Store", marketplaceCode: "US", currency: "USD" }] },
+      "/base-currency": { data: { baseCurrency: "USD" } },
+      "/exchange-rates": { data: [{ from: "USD", to: "USD", rate: 1 }] },
+      "/sales/today": { data: { total: 123.45, baseCurrency: "USD" } },
+      "/orders": { data: [{ orderId: "o-1", storeId: "shop-1", sku: "SKU-1", amount: 12.34, quantity: 2, updatedAt: "2026-09-21T10:00:00Z" }], nextCursor: "c-1" },
+    };
+    return new Response(JSON.stringify(payloads[path] || { data: [] }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const client = new GenericRestClient({ baseUrl: "https://erp.example.test/api", token: "secret", fetcher });
+  const source = new GenericRestDataSource({ client, config: { baseUrl: "https://erp.example.test/api", token: "secret" } });
+  const connected = await source.connect();
+  assert.equal(connected.provider, "custom");
+  assert.equal(connected.stores[0].marketplaceCode, "US");
+  assert.equal((await source.getTodaySales({ baseCurrency: "USD" })).total, 12345);
+  const result = await source.getOrdersSince(null);
+  assert.equal(result.events[0].amount, 1234);
+  assert.equal(result.events[0].msku, "SKU-1");
+  assert.equal(result.cursor, "c-1");
+  assert.equal(calls.every((call) => call.options.headers.Authorization === "Bearer secret"), true);
 });
 
 test("GerpGo groups sales requests by each marketplace local business date", () => {

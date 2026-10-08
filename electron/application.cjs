@@ -23,6 +23,8 @@ const native = require("./windows.cjs");
 const { GerpGoClient } = require("./gerpgo/client.cjs");
 const { GerpGoDataSource } = require("./gerpgo/datasource.cjs");
 const { GerpGoPoller } = require("./gerpgo/poller.cjs");
+const { GenericRestClient } = require("./custom/client.cjs");
+const { GenericRestDataSource } = require("./custom/datasource.cjs");
 const { DEFAULT_BASE_URL, normalizeBaseUrl } = require("./gerpgo/config.cjs");
 const { ExchangeRates } = require("./fx.cjs");
 const defaults = {
@@ -31,7 +33,7 @@ const defaults = {
   reviews: true,
   startup: false,
   markets: ["US", "CA", "MX"],
-  // Empty means all currently enabled GerpGo stores. Once the user chooses
+  // Empty means all currently enabled provider stores. Once the user chooses
   // specific stores this contains their stable marketId values.
   storeIds: [],
   baseCurrency: "USD",
@@ -54,8 +56,8 @@ let db,
   quitting = false,
   error = null,
   fxError = null,
-  gerpgoSource = null,
-  gerpgoPoller = null,
+  commerceSource = null,
+  commercePoller = null,
   capabilities = {
     stores: false,
     sales: false,
@@ -82,6 +84,10 @@ let db,
 const workers = new Map(),
   statuses = new Map();
 let reconnectQueue = Promise.resolve();
+const LIVE_SOURCES = new Set(["gerpgo", "custom"]);
+const isLiveSource = (source = preferences.source) => LIVE_SOURCES.has(source);
+const providerKey = (source = preferences.source) => isLiveSource(source) ? source : "gerpgo";
+const providerName = (source = preferences.source) => source === "custom" ? "自定义 ERP" : "GerpGo";
 app.setName("amazon-vision");
 if (process.argv.includes("--software-rendering"))
   app.disableHardwareAcceleration();
@@ -96,7 +102,7 @@ function log(event, details = "") {
 function namespace() {
   return preferences.source === "demo"
     ? "demo-latest"
-    : "gerpgo:" + db.get("accountKey", "unconfigured");
+    : `${providerKey()}:` + db.get(`${providerKey()}AccountKey`, "unconfigured");
 }
 function dates() {
   return preferences.markets
@@ -105,14 +111,16 @@ function dates() {
 }
 function status() {
   if (preferences.source === "demo") return "demo";
-  const current = statuses.get("gerpgo") || "disconnected";
+  const current = statuses.get(providerKey()) || "disconnected";
   return current;
 }
 function state() {
   return {
     ...machine.snapshot(),
     settings: preferences,
-    stores: db?.listStores?.("gerpgo") || [],
+    stores: db?.listStores?.(providerKey()) || [],
+    provider: providerKey(),
+    providerName: providerName(),
     connection: status(),
     syncStatuses: Object.fromEntries(statuses),
     lastSync,
@@ -296,7 +304,7 @@ function setHidden(value) {
 function menuItems() {
   return [
     { label: "Settings", click: openSettings },
-    { label: "Reconnect GerpGo", click: () => reconnect() },
+    { label: "Reconnect data source", click: () => reconnect() },
     { label: hidden ? "Show" : "Hide", click: () => setHidden(!hidden) },
     { type: "separator" },
     { label: "Exit", click: () => app.quit() },
@@ -333,8 +341,8 @@ function seed() {
   fx.demo(preferences.markets, preferences.baseCurrency);
 }
 function aggregate() {
-  if (preferences.source === "gerpgo") {
-    const cached = db.latestSalesSnapshot("gerpgo", preferences.baseCurrency);
+  if (isLiveSource()) {
+    const cached = db.latestSalesSnapshot(providerKey(), preferences.baseCurrency);
     if (cached) {
       valuation = { total: cached.total, complete: true, missing: [], rows: [] };
       return valuation.total;
@@ -345,16 +353,16 @@ function aggregate() {
     preferences.baseCurrency,
     namespace(),
     Date.now(),
-    preferences.source === "gerpgo" ? preferences.storeIds : [],
+    isLiveSource() ? preferences.storeIds : [],
   );
   return valuation.total ?? machine?.total ?? 0;
 }
 function stopSync() {
   generation++;
   for (const worker of workers.values()) worker.stop();
-  gerpgoPoller?.stop();
-  gerpgoPoller = null;
-  gerpgoSource = null;
+  commercePoller?.stop();
+  commercePoller = null;
+  commerceSource = null;
   workers.clear();
   statuses.clear();
   deferred = [];
@@ -370,7 +378,7 @@ async function reconcileOnce(fresh = [], epoch = generation) {
   if (epoch !== generation || quitting) return;
   deferred.push(...fresh);
   try {
-    if (preferences.source !== "gerpgo") {
+    if (!isLiveSource()) {
       await fx.ensure(
         preferences.markets,
         preferences.baseCurrency,
@@ -409,10 +417,10 @@ async function reconcileOnce(fresh = [], epoch = generation) {
       })
       .filter((e) => e.type !== "REVIEW" || !e.silent);
     deferred = [];
-    // GerpGo's official sales snapshot is reconciled periodically. Apply
+    // Provider sales snapshots are reconciled periodically. Apply
     // newly received current-day events immediately so the total advances
     // with the order bubble instead of waiting for the next snapshot.
-    const liveNext = preferences.source === "gerpgo"
+    const liveNext = isLiveSource()
       ? next + visual.reduce((sum, event) => sum + (event.salesDelta || 0), 0)
       : next;
     machine.ingest(visual, liveNext);
@@ -447,7 +455,7 @@ async function updateSettings(value) {
     if (typeof value[key] === "boolean") next[key] = value[key];
   if (typeof value.alwaysOnTop === "boolean")
     next.alwaysOnTop = value.alwaysOnTop;
-  if (["demo", "gerpgo"].includes(value.source)) next.source = value.source;
+  if (["demo", "gerpgo", "custom"].includes(value.source)) next.source = value.source;
   if (CURRENCIES.includes(value.baseCurrency))
     next.baseCurrency = value.baseCurrency;
   if (Array.isArray(value.markets)) {
@@ -456,7 +464,7 @@ async function updateSettings(value) {
     next.markets = [...new Set(value.markets)];
   }
   if (Array.isArray(value.storeIds)) {
-    const available = new Set((db?.listStores?.("gerpgo") || []).map((store) => String(store.id)));
+    const available = new Set((db?.listStores?.(providerKey(value.source || preferences.source)) || []).map((store) => String(store.id)));
     const selected = [...new Set(value.storeIds.map(String))].filter((id) => available.has(id));
     if (!selected.length) throw Error("至少选择一个店铺。");
     next.storeIds = selected;
@@ -473,7 +481,7 @@ async function updateSettings(value) {
   if (changed) stopSync();
   preferences = { ...preferences, ...next };
   if (changed && ("storeIds" in next || "source" in next || "baseCurrency" in next))
-    db.clearSalesSnapshots("gerpgo");
+    db.clearSalesSnapshots(providerKey(preferences.source));
   db.set("preferences-latest", preferences);
   if ("startup" in next)
     app.setLoginItemSettings({
@@ -488,7 +496,7 @@ async function updateSettings(value) {
     machine.reset(aggregate());
     dateKey = dates();
     await reconcile();
-    if (preferences.source === "gerpgo") reconnect();
+    if (isLiveSource()) reconnect();
   }
   if ("alwaysOnTop" in next)
     widget?.setAlwaysOnTop(preferences.alwaysOnTop, "pop-up-menu");
@@ -532,9 +540,11 @@ async function reconnectImpl() {
     broadcast();
     return state();
   }
-  const encrypted = db.get("gerpgoCredentials", null);
+  const sourceName = preferences.source;
+  const key = providerKey(sourceName);
+  const encrypted = db.get(`${key}Credentials`, null);
   if (!encrypted) {
-    error = "请先在账户设置中连接 GerpGo OpenAPI。";
+    error = `请先在账户设置中连接${providerName(sourceName)}。`;
     broadcast();
     return state();
   }
@@ -551,23 +561,32 @@ async function reconnectImpl() {
   }
   const epoch = generation;
   try {
-    const client = new GerpGoClient({ credentials, baseUrl: normalizeBaseUrl(db.get("gerpgoBaseUrl", process.env.GERPGO_BASE_URL || DEFAULT_BASE_URL)) });
-    client.setLogger((event, details) => log(`gerpgo-${event}`, JSON.stringify(details)));
-    gerpgoSource = new GerpGoDataSource({ client, storeIds: preferences.storeIds });
-    statuses.set("gerpgo", "syncing");
-    const connected = await gerpgoSource.connect();
+    let source;
+    if (sourceName === "gerpgo") {
+      const client = new GerpGoClient({ credentials, baseUrl: normalizeBaseUrl(db.get("gerpgoBaseUrl", process.env.GERPGO_BASE_URL || DEFAULT_BASE_URL)) });
+      client.setLogger((event, details) => log(`gerpgo-${event}`, JSON.stringify(details)));
+      source = new GerpGoDataSource({ client, storeIds: preferences.storeIds });
+    } else if (sourceName === "custom") {
+      const client = new GenericRestClient(credentials);
+      source = new GenericRestDataSource({ config: credentials, client, storeIds: preferences.storeIds });
+    } else {
+      throw Error("未知数据源。");
+    }
+    commerceSource = source;
+    statuses.set(key, "syncing");
+    const connected = await source.connect();
     // A newer connect request may have replaced this attempt while the
     // provider was still responding. Never let the stale attempt overwrite
     // the new connection state or start a second poller.
     if (epoch !== generation || quitting) return state();
     capabilities = connected.capabilities;
-    db.saveStores("gerpgo", connected.stores || []);
+    db.saveStores(key, connected.stores || []);
     const availableStoreIds = new Set((connected.stores || []).filter((store) => store.enabled !== false).map((store) => String(store.id)));
     if (preferences.storeIds.length) {
       preferences.storeIds = preferences.storeIds.filter((id) => availableStoreIds.has(String(id)));
       if (!preferences.storeIds.length) preferences.storeIds = [...availableStoreIds];
       db.set("preferences-latest", preferences);
-      gerpgoSource.storeIds = preferences.storeIds;
+      source.storeIds = preferences.storeIds;
     }
     if (connected.baseCurrency && CURRENCIES.includes(connected.baseCurrency)) {
       preferences.baseCurrency = connected.baseCurrency;
@@ -578,9 +597,9 @@ async function reconnectImpl() {
     if (enabledMarkets.length) preferences.markets = enabledMarkets;
     db.set("preferences-latest", preferences);
     const rateDates = [0, 1, 2].map((days) => new Date(Date.now() - days * 86400000).toISOString().slice(0, 10));
-    fx.applyGerpGo(connected.exchangeRates || [], "live", rateDates);
-    gerpgoPoller = new GerpGoPoller({
-      source: gerpgoSource,
+    fx.applyProvider(connected.exchangeRates || [], "live", rateDates, providerName(sourceName));
+    commercePoller = new GerpGoPoller({
+      source,
       cursorStore: {
         get: (key, fallback) => db.get(`sync:${key}`, fallback),
         set: (key, value) => db.set(`sync:${key}`, value),
@@ -588,7 +607,7 @@ async function reconnectImpl() {
       onEvents: (events, baseline) => ingest(events, baseline, epoch),
       onSnapshot: async (snapshot) => {
         if (!snapshot) return;
-        db.saveSalesSnapshot("gerpgo", snapshot);
+        db.saveSalesSnapshot(key, snapshot);
         if (snapshot.baseCurrency === preferences.baseCurrency) {
           machine.reset(snapshot.total);
           valuation = { total: snapshot.total, complete: true, missing: [] };
@@ -597,16 +616,16 @@ async function reconnectImpl() {
       },
       onStatus: (value, message) => {
         if (epoch !== generation) return;
-        statuses.set("gerpgo", value);
+        statuses.set(key, value);
         if (message) error = message;
         if (value === "connected") lastSync = new Date().toISOString();
         broadcast();
       },
     });
-    gerpgoPoller.start();
+    commercePoller.start();
   } catch (e) {
     if (epoch !== generation || quitting) return state();
-    statuses.set("gerpgo", "error");
+    statuses.set(key, "error");
     error = e.message;
     broadcast();
   }
@@ -667,7 +686,7 @@ else {
       const { displayMode: _legacyDisplayMode, ...saved } = savedPreferences;
       preferences = { ...defaults, ...saved };
       if (!Array.isArray(preferences.storeIds)) preferences.storeIds = [];
-      if (preferences.source !== "demo") preferences.source = "gerpgo";
+      if (!['demo', 'gerpgo', 'custom'].includes(preferences.source)) preferences.source = "gerpgo";
       db.set("preferences-latest", preferences);
       seed();
       dateKey = dates();
@@ -741,13 +760,13 @@ else {
       powerMonitor.on("resume", () => {
         position();
         tick();
-        if (preferences.source === "gerpgo") reconnect();
+        if (isLiveSource()) reconnect();
       });
       geometryTimer = setInterval(position, 3000);
       geometryTimer.unref();
       dateTimer = setInterval(tick, 60000);
       dateTimer.unref();
-      if (preferences.source === "gerpgo") reconnect();
+      if (isLiveSource()) reconnect();
       detectPublicIp();
       if (
         !db.get("onboarded-latest", false) ||
@@ -830,33 +849,47 @@ ipcMain.on("renderer-ready", (event, value) => {
 });
 ipcMain.on("renderer-error", (_, message) => log("renderer-error", message));
 ipcMain.handle("connect", async (_, c) => {
-  if (!c || typeof c !== "object" || typeof c.appId !== "string" || typeof c.appKey !== "string" || !c.appId.trim() || !c.appKey.trim())
-    throw Error("请填写 GerpGo 官方 App ID 和 App Key。");
-  const credentials = { appId: c.appId.trim(), appKey: c.appKey.trim() };
-  if (Object.values(credentials).some((value) => value.length >= 4096)) throw Error("GerpGo 凭证过长。");
-  const baseUrl = normalizeBaseUrl(c.baseUrl);
-  if (!/^https?:\/\//i.test(baseUrl)) throw Error("GerpGo API 地址无效。");
+  if (!c || typeof c !== "object") throw Error("连接参数无效。");
+  const source = c.provider === "custom" ? "custom" : "gerpgo";
+  let credentials;
+  if (source === "gerpgo") {
+    if (typeof c.appId !== "string" || typeof c.appKey !== "string" || !c.appId.trim() || !c.appKey.trim())
+      throw Error("请填写 GerpGo 官方 App ID 和 App Key。");
+    credentials = { appId: c.appId.trim(), appKey: c.appKey.trim() };
+  } else {
+    if (typeof c.token !== "string" || !c.token.trim()) throw Error("请填写 ERP API Token。");
+    credentials = {
+      baseUrl: String(c.baseUrl || "").trim().replace(/\/$/, ""),
+      token: c.token.trim(),
+      tokenHeader: typeof c.tokenHeader === "string" ? c.tokenHeader.trim() || "Authorization" : "Authorization",
+      tokenPrefix: typeof c.tokenPrefix === "string" ? c.tokenPrefix : "Bearer ",
+      baseCurrency: typeof c.baseCurrency === "string" ? c.baseCurrency.trim().toUpperCase() : "USD",
+    };
+  }
+  if (Object.values(credentials).some((value) => typeof value === "string" && value.length >= 4096)) throw Error("凭证或 API 地址过长。");
+  const baseUrl = source === "gerpgo" ? normalizeBaseUrl(c.baseUrl) : credentials.baseUrl;
+  if (!/^https?:\/\//i.test(baseUrl)) throw Error("API 地址无效。");
   if (!safeStorage.isEncryptionAvailable())
     throw Error("Windows 安全存储不可用。");
   stopSync();
   // Snapshots are scoped to the account and selected stores. Clear the old
   // scope before a new account or store selection can be displayed.
-  db.clearSalesSnapshots("gerpgo");
+  db.clearSalesSnapshots(source);
   db.set(
-    "gerpgoCredentials",
+    `${source}Credentials`,
     safeStorage
       .encryptString(JSON.stringify(credentials))
       .toString("base64"),
   );
   db.set(
-    "accountKey",
+    `${source}AccountKey`,
     createHash("sha256")
       .update(JSON.stringify(credentials))
       .digest("hex")
       .slice(0, 24),
   );
-  db.set("gerpgoBaseUrl", baseUrl);
-  preferences.source = "gerpgo";
+  if (source === "gerpgo") db.set("gerpgoBaseUrl", baseUrl);
+  preferences.source = source;
   db.set("preferences-latest", preferences);
   machine.reset(aggregate());
   return reconnect();

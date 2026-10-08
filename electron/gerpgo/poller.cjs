@@ -11,6 +11,7 @@ class GerpGoPoller {
     this.intervalMs = Math.max(15000, intervalMs);
     this.reconciliationMs = Math.max(this.intervalMs, reconciliationMs);
     this.now = now;
+    this.provider = String(source?.provider || "gerpgo");
     this.stopped = false;
     this.timer = null;
     this.reconcileTimer = null;
@@ -37,12 +38,12 @@ class GerpGoPoller {
       const errors = [];
       for (const [resource, method] of resources) {
         if (this.source.capabilities && this.source.capabilities[resource] === false) continue;
-        const cursor = this.cursorStore?.get?.(`gerpgo:${resource}`, null) || null;
+        const cursor = this.cursorStore?.get?.(`${this.provider}:${resource}`, null) || null;
         try {
           const result = await this.source[method](cursor);
           events.push(...(result?.events || []));
           if (result?.cursor !== undefined) {
-            this.cursorStore?.set?.(`gerpgo:${resource}`, result.cursor);
+            this.cursorStore?.set?.(`${this.provider}:${resource}`, result.cursor);
           }
         } catch (error) {
           if (error.code !== "UNSUPPORTED_CAPABILITY") errors.push(error);

@@ -10,10 +10,10 @@ Windows 桌面悬浮胶囊 · GerpGo OpenAPI · Liquid Glass
 
 <br />
 
-[![Version](https://img.shields.io/badge/version-2.2.1-52677d?style=flat-square)](package.json)
+[![Version](https://img.shields.io/badge/version-2.3.0-52677d?style=flat-square)](package.json)
 [![Platform](https://img.shields.io/badge/platform-Windows-52677d?style=flat-square)](#快速开始)
-[![Data source](https://img.shields.io/badge/data-GerpGo%20OpenAPI-52677d?style=flat-square)](docs/GERPGO_API_INVENTORY.md)
-[![Tests](https://img.shields.io/badge/tests-35%20passing-668b78?style=flat-square)](VALIDATION.md)
+[![Data source](https://img.shields.io/badge/data-GerpGo%20%2B%20REST%20ERP-52677d?style=flat-square)](docs/GERPGO_API_INVENTORY.md)
+[![Tests](https://img.shields.io/badge/tests-36%20passing-668b78?style=flat-square)](VALIDATION.md)
 
 </div>
 
@@ -23,7 +23,7 @@ Windows 桌面悬浮胶囊 · GerpGo OpenAPI · Liquid Glass
 
 Amazon Sales Bubble 是一个只保留一颗悬浮胶囊的 Windows 桌面组件。它固定显示当日销售额；订单、退款和 Review 到来时，在同一颗胶囊内短暂展示事件，随后自动回到总额。
 
-它把数据同步、去重、汇率换算和展示动画拆开，既能连接真实 GerpGo 店铺，也能用演示模式快速检查界面。
+它把数据同步、去重、汇率换算和展示动画拆开，既能连接真实 GerpGo 店铺，也能通过通用 REST 适配连接其他 ERP，或用演示模式快速检查界面。
 
 ## 产品亮点
 
@@ -66,7 +66,7 @@ flowchart LR
 
 | 层 | 负责内容 |
 | --- | --- |
-| 数据源 | GerpGo token、店铺、销售表现、订单、退款、Review 和汇率 |
+| 数据源 | GerpGo OpenAPI 或通用 REST ERP；店铺、销售表现、订单、退款、Review 和汇率 |
 | 标准化 | 将官方响应映射为统一事件，过滤买家个人信息 |
 | 本地状态 | SQLite 去重、店铺范围、每日汇率、销售快照和同步游标 |
 | 展示状态机 | 合并高频事件，控制事件停留、总额动画和减少动态模式 |
@@ -104,7 +104,9 @@ npm run pack
 
 ### 下载 Windows 便携版
 
-从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon.Sales.Bubble.2.2.1.exe`，双击即可运行，无需安装。
+从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon.Sales.Bubble.2.3.0.exe`，双击即可运行，无需安装。
+
+其他 ERP 的接口字段和路径约定见 [通用 ERP REST 适配说明](docs/CUSTOM_ERP_ADAPTER.md)。
 
 ## 连接 GerpGo
 
@@ -120,7 +122,7 @@ npm run pack
 ## 开发与验证
 
 ```powershell
-npm test       # 35 项测试
+npm test       # 36 项测试
 npm run build  # Vite 生产构建
 npm run pack   # Electron Windows 便携包
 ```

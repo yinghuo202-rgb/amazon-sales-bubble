@@ -662,6 +662,12 @@ button svg {
   margin-left: 12px;
   flex-shrink: 0;
 }
+.provider-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
 .ip-actions {
   display: flex;
   align-items: center;

@@ -338,7 +338,7 @@ function Quick({ state, onSettings, onExit }) {
         {state.connection === "demo"
           ? "演示工作区"
           : state.connection === "connected"
-            ? "GerpGo 已连接"
+            ? `${state.providerName || "数据源"} 已连接`
             : state.connection === "syncing"
               ? "正在同步"
               : "连接待检查"}
@@ -370,11 +370,12 @@ function App() {
     [tab, setTab] = useState("appearance"),
     [toast, setToast] = useState(""),
     [connect, setConnect] = useState(false),
+    [connectProvider, setConnectProvider] = useState("gerpgo"),
     [busy, setBusy] = useState(false),
     [quick, setQuick] = useState(false),
     [context, setContext] = useState(false),
     [demoMarket, setDemoMarket] = useState("US"),
-    [credentials, setCredentials] = useState({ baseUrl: "https://open.gerpgo.com/api/open", appId: "", appKey: "" });
+    [credentials, setCredentials] = useState({ baseUrl: "https://open.gerpgo.com/api/open", appId: "", appKey: "", token: "", tokenHeader: "Authorization", tokenPrefix: "Bearer ", baseCurrency: "USD" });
   useEffect(() => {
     const unsub = api.subscribe(setState);
     api
@@ -497,7 +498,7 @@ function App() {
             {state.connection === "demo"
               ? "演示工作区"
               : state.connection === "connected"
-                ? "GerpGo 已连接"
+                ? `${state.providerName || "数据源"} 已连接`
                 : state.connection === "syncing"
                   ? "正在同步"
                   : "未连接"}
@@ -710,7 +711,7 @@ function App() {
                   </select>
                 </Row>
               </section>
-              {s.source === "gerpgo" && providerStores.length ? (
+              {s.source !== "demo" && providerStores.length ? (
                 <>
                   <div className="section-title">
                     <h2>店铺</h2>
@@ -803,10 +804,10 @@ function App() {
                 </div>
                 <div>
                   <h2>Amazon Seller</h2>
-                  <p>{s.source === "demo" ? "演示工作区" : "GerpGo OpenAPI"}</p>
+                  <p>{s.source === "demo" ? "演示工作区" : (state.providerName || "GerpGo")}</p>
                 </div>
                 <span className="subtle-tag">
-                  {s.source === "demo" ? "DEMO" : "GERPGO"}
+                  {s.source === "demo" ? "DEMO" : s.source === "custom" ? "CUSTOM ERP" : "GERPGO"}
                 </span>
               </section>
               <div className="section-title">
@@ -815,13 +816,18 @@ function App() {
               <section className="settings-card">
                 <Row
                   icon={Plug}
-                  title="GerpGo OpenAPI"
-                  description="积加开放平台凭证"
+                  title="数据源"
+                  description={s.source === "custom" ? "通用 REST ERP 适配" : "选择要同步的销售数据平台"}
                 >
-                  <button className="primary" onClick={() => setConnect(true)}>
-                    连接账户
-                    <ArrowUpRight size={14} />
-                  </button>
+                  <div className="provider-actions">
+                    <button className="primary" onClick={() => { setConnectProvider("gerpgo"); setConnect(true); }}>
+                      连接 GerpGo
+                      <ArrowUpRight size={14} />
+                    </button>
+                    <button className="secondary" onClick={() => { setConnectProvider("custom"); setConnect(true); }}>
+                      连接其他 ERP
+                    </button>
+                  </div>
                 </Row>
                 <Row
                   icon={RefreshCw}
@@ -839,7 +845,7 @@ function App() {
                       await api.reconnect();
                       if (s.source === "demo")
                         setToast(
-                          "演示工作区运行正常，连接 GerpGo 后可同步真实数据。",
+                        "演示工作区运行正常，连接数据源后可同步真实数据。",
                         );
                     }}
                   >
@@ -849,7 +855,7 @@ function App() {
                 <Row
                   icon={Star}
                   title="数据能力"
-                  description="由 GerpGo API 清单决定"
+                  description={`由${state.providerName || "当前数据源"}提供`}
                 >
                   <span className="subtle-tag">
                     {state.capabilities?.orders ? "订单可用" : "订单待确认"}
@@ -863,7 +869,7 @@ function App() {
                 <Row
                   icon={Globe}
                   title="当前公网 IPv4"
-                  description="将此地址添加到 GerpGo IP 白名单"
+                    description={`将此地址添加到${state.providerName || "ERP"} IP 白名单（如有要求）`}
                 >
                   <div className="ip-actions">
                     <code className={`ip-value ${state.publicIp?.status === "error" ? "error" : ""}`}>
@@ -906,7 +912,7 @@ function App() {
                   <p>凭证保存在此设备。</p>
                 </div>
               </div>
-              {s.source === "gerpgo" && (
+              {s.source !== "demo" && (
                 <button
                   className="text-button"
                   onClick={() => change({ source: "demo" })}
@@ -981,10 +987,10 @@ function App() {
               event.preventDefault();
               setBusy(true);
               try {
-                await api.connect(credentials);
-                setCredentials({ baseUrl: "https://open.gerpgo.com/api/open", appId: "", appKey: "" });
+                await api.connect({ ...credentials, provider: connectProvider });
+                setCredentials({ baseUrl: "https://open.gerpgo.com/api/open", appId: "", appKey: "", token: "", tokenHeader: "Authorization", tokenPrefix: "Bearer ", baseCurrency: "USD" });
                 setConnect(false);
-                setToast("凭证已加密保存，正在验证 GerpGo 连接。");
+                setToast(`凭证已加密保存，正在验证${connectProvider === "custom" ? " ERP" : " GerpGo"}连接。`);
               } catch (e) {
                 setToast(e.message);
               } finally {
@@ -1000,16 +1006,16 @@ function App() {
             >
               <X size={18} />
             </button>
-            <div className="eyebrow">GERPGO OPENAPI</div>
-            <h2>连接 GerpGo</h2>
-            <p>官方文档未要求单独填写 Host，默认使用积加开放平台代理；只有积加另行提供地址时才需要修改。</p>
+            <div className="eyebrow">{connectProvider === "custom" ? "CUSTOM ERP REST" : "GERPGO OPENAPI"}</div>
+            <h2>{connectProvider === "custom" ? "连接其他 ERP" : "连接 GerpGo"}</h2>
+            <p>{connectProvider === "custom" ? "ERP 需要提供标准 REST 接口：/stores、/sales/today、/orders、/refunds、/reviews。字段约定见项目文档。" : "官方文档未要求单独填写 Host，默认使用积加开放平台代理；只有积加另行提供地址时才需要修改。"}</p>
             {!state.desktop && (
               <div className="inline-warning">
                 请在 Windows 桌面版中连接账户。
               </div>
             )}
             <label>
-              API Host（可选）
+              API Host
               <input
                 disabled={!state.desktop}
                 type="url"
@@ -1018,6 +1024,7 @@ function App() {
                 onChange={(e) => setCredentials({ ...credentials, baseUrl: e.target.value })}
               />
             </label>
+            {connectProvider === "gerpgo" ? <>
             <label>
               App ID
               <input
@@ -1040,6 +1047,38 @@ function App() {
                 onChange={(e) => setCredentials({ ...credentials, appKey: e.target.value })}
               />
             </label>
+            </> : <>
+            <label>
+              API Token
+              <input
+                disabled={!state.desktop}
+                required
+                type="password"
+                autoComplete="off"
+                value={credentials.token}
+                onChange={(e) => setCredentials({ ...credentials, token: e.target.value })}
+              />
+            </label>
+            <label>
+              Token 请求头
+              <input
+                disabled={!state.desktop}
+                type="text"
+                value={credentials.tokenHeader}
+                onChange={(e) => setCredentials({ ...credentials, tokenHeader: e.target.value })}
+              />
+            </label>
+            <label>
+              Token 前缀
+              <input
+                disabled={!state.desktop}
+                type="text"
+                placeholder="Bearer "
+                value={credentials.tokenPrefix}
+                onChange={(e) => setCredentials({ ...credentials, tokenPrefix: e.target.value })}
+              />
+            </label>
+            </>}
             <button
               disabled={busy || !state.desktop}
               className="primary connect-submit"
