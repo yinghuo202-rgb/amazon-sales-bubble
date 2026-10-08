@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+release-latest/
+*.sqlite*
+*.log
+.env*
+.tmp*.json

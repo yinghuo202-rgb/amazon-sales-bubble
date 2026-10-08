@@ -1,0 +1,44 @@
+{
+  "name": "amazon-vision",
+  "version": "2.2.0",
+  "private": true,
+  "description": "A quiet Amazon sales companion for Windows",
+  "main": "electron/application.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "start": "npm run build && electron .",
+    "test": "node --test tests/*.test.cjs",
+    "pack": "npm run build && electron-builder --config electron-builder.config.cjs --win portable"
+  },
+  "dependencies": {
+    "koffi": "^3.3.0",
+    "lucide-react": "^0.468.0",
+    "motion": "^12.43.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "electron": "^44.4.1",
+    "electron-builder": "^26.0.12",
+    "prettier": "^3.9.6",
+    "vite": "^6.3.0"
+  },
+  "build": {
+    "appId": "com.amazonvision.desktop",
+    "productName": "Amazon Sales Bubble",
+    "directories": {
+      "output": "release-latest"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "core/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  }
+}
