@@ -88,6 +88,14 @@ const LIVE_SOURCES = new Set(["gerpgo", "custom"]);
 const isLiveSource = (source = preferences.source) => LIVE_SOURCES.has(source);
 const providerKey = (source = preferences.source) => isLiveSource(source) ? source : "gerpgo";
 const providerName = (source = preferences.source) => source === "custom" ? "自定义 ERP" : "GerpGo";
+const alwaysOnTopLevel = () => process.platform === "darwin" ? "floating" : "pop-up-menu";
+function setFloatingWindowOptions(window) {
+  if (!window || window.isDestroyed()) return;
+  window.setAlwaysOnTop?.(preferences.alwaysOnTop, alwaysOnTopLevel());
+  window.setSkipTaskbar?.(true);
+  window.setIgnoreMouseEvents?.(false);
+  window.setFocusable?.(true);
+}
 app.setName("amazon-vision");
 if (process.argv.includes("--software-rendering"))
   app.disableHardwareAcceleration();
@@ -499,7 +507,7 @@ async function updateSettings(value) {
     if (isLiveSource()) reconnect();
   }
   if ("alwaysOnTop" in next)
-    widget?.setAlwaysOnTop(preferences.alwaysOnTop, "pop-up-menu");
+    widget?.setAlwaysOnTop?.(preferences.alwaysOnTop, alwaysOnTopLevel());
   broadcast();
   return state();
 }
@@ -714,10 +722,7 @@ else {
         hasShadow: false,
         title: "Amazon Sales Bubble · Sales",
       });
-      widget.setAlwaysOnTop(preferences.alwaysOnTop, "pop-up-menu");
-      widget.setSkipTaskbar(true);
-      widget.setIgnoreMouseEvents(false);
-      widget.setFocusable(true);
+      setFloatingWindowOptions(widget);
       widget.on("moved", () => {
         if (!widgetReady) return;
         if (dragging) {
@@ -814,7 +819,7 @@ ipcMain.on("drag-start", () => {
     bounds = widget.getBounds();
   dragOffset = { x: cursor.x - bounds.x, y: cursor.y - bounds.y };
   dragging = true;
-  widget.setFocusable(true);
+  widget.setFocusable?.(true);
 });
 ipcMain.on("drag-move", () => {
   if (!dragOffset || !widget || widget.isDestroyed()) return;
@@ -839,7 +844,7 @@ ipcMain.on("drag-end", () => {
   preferences.floatingPosition = { x: b.x, y: b.y };
   db?.set("preferences-latest", preferences);
   lastGeometry = "";
-  widget.setFocusable(true);
+  widget.setFocusable?.(true);
 });
 ipcMain.handle("hide", () => setHidden(true));
 ipcMain.handle("exit", () => app.quit());

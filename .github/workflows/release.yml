@@ -1,4 +1,4 @@
-name: Build Windows release
+name: Build multi-platform release
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  windows:
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -28,11 +28,52 @@ jobs:
       - name: Verify
         run: npm test
 
-      - name: Build portable app
+      - name: Build Windows portable app
         run: npm run pack
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: release-latest/*.exe
+          if-no-files-found: error
 
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify
+        run: npm test
+      - name: Build macOS DMG and ZIP
+        run: npm run pack:mac
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: |
+            release-latest/*.dmg
+            release-latest/*.zip
+          if-no-files-found: error
+
+  publish:
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          files: release-latest/Amazon Sales Bubble *.exe
+          files: release-assets/*

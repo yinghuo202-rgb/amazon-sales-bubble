@@ -6,12 +6,12 @@
 
 **把 Amazon 当日销售额放在桌面边缘。**
 
-Windows 桌面悬浮胶囊 · GerpGo OpenAPI · Liquid Glass
+Windows / macOS 桌面悬浮胶囊 · GerpGo OpenAPI · Liquid Glass
 
 <br />
 
-[![Version](https://img.shields.io/badge/version-2.3.0-52677d?style=flat-square)](package.json)
-[![Platform](https://img.shields.io/badge/platform-Windows-52677d?style=flat-square)](#快速开始)
+[![Version](https://img.shields.io/badge/version-2.4.0-52677d?style=flat-square)](package.json)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-52677d?style=flat-square)](#快速开始)
 [![Data source](https://img.shields.io/badge/data-GerpGo%20%2B%20REST%20ERP-52677d?style=flat-square)](docs/GERPGO_API_INVENTORY.md)
 [![Tests](https://img.shields.io/badge/tests-36%20passing-668b78?style=flat-square)](VALIDATION.md)
 
@@ -21,7 +21,7 @@ Windows 桌面悬浮胶囊 · GerpGo OpenAPI · Liquid Glass
 
 ## 这是什么
 
-Amazon Sales Bubble 是一个只保留一颗悬浮胶囊的 Windows 桌面组件。它固定显示当日销售额；订单、退款和 Review 到来时，在同一颗胶囊内短暂展示事件，随后自动回到总额。
+Amazon Sales Bubble 是一个只保留一颗悬浮胶囊的 Windows / macOS 桌面组件。它固定显示当日销售额；订单、退款和 Review 到来时，在同一颗胶囊内短暂展示事件，随后自动回到总额。
 
 它把数据同步、去重、汇率换算和展示动画拆开，既能连接真实 GerpGo 店铺，也能通过通用 REST 适配连接其他 ERP，或用演示模式快速检查界面。
 
@@ -81,12 +81,12 @@ flowchart LR
 - **事件反馈**：订单绿色增加、退款红色减少、Review 显示星级与摘要；事件结束后回到总额。
 - **材质调节**：设置页可调节胶囊玻璃浓度，预览和桌面悬浮版使用同一参数。
 - **演示模式**：无需连接账号即可触发订单、退款、Review 和批量事件，检查动画时序。
-- **数据安全**：凭证使用 Windows `safeStorage` 保存；日志会脱敏，不保存 accessToken 或买家个人信息。
+- **数据安全**：凭证使用 Electron `safeStorage` 保存；日志会脱敏，不保存 accessToken 或买家个人信息。
 - **白名单辅助**：账户页自动检测当前公网 IPv4，支持刷新和复制，方便配置 GerpGo IP 白名单。
 
 ## 快速开始
 
-需要 Windows、Node.js 以及 npm。
+需要 Windows 或 macOS、Node.js 以及 npm。
 
 ```powershell
 npm install
@@ -102,9 +102,15 @@ npm run pack
 
 输出位于 `release-latest/`。
 
+构建 macOS DMG 与 ZIP：
+
+```bash
+npm run pack:mac
+```
+
 ### 下载 Windows 便携版
 
-从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon.Sales.Bubble.2.3.0.exe`，双击即可运行，无需安装。
+从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 Windows `Amazon.Sales.Bubble.2.4.0.exe`，或下载 macOS 对应架构的 DMG/ZIP。
 
 其他 ERP 的接口字段和路径约定见 [通用 ERP REST 适配说明](docs/CUSTOM_ERP_ADAPTER.md)。
 
@@ -145,7 +151,9 @@ docs/                   产品需求、原生窗口和 API 清单
 - [GerpGo API 清单](docs/GERPGO_API_INVENTORY.md)
 - [产品需求](docs/PRODUCT_REQUIREMENTS.md)
 - [原生窗口说明](docs/NATIVE_TASKBAR.md)
+- [macOS 适配说明](docs/MACOS.md)
 - [验证记录](VALIDATION.md)
+- [通用 ERP REST 适配说明](docs/CUSTOM_ERP_ADAPTER.md)
 
 ## 当前边界
 
