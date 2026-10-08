@@ -51,12 +51,12 @@ jobs:
         run: npm ci
       - name: Verify
         run: npm test
-      - name: Build macOS DMG and ZIP
-        run: npm run pack:mac
+      - name: Build macOS Apple Silicon DMG and ZIP
+        run: npm run pack:mac -- --arm64
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-macos
+          name: release-macos-arm64
           path: |
             release-latest/*.dmg
             release-latest/*.zip

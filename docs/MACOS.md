@@ -16,4 +16,4 @@ npm test
 npm run pack:mac
 ```
 
-输出包括 Intel (`x64`) 和 Apple Silicon (`arm64`) 的 DMG 与 ZIP。当前产物未签名、未公证；正式分发时需要配置 Apple Developer ID、签名证书和公证凭证。
+GitHub Release 当前构建 Apple Silicon (`arm64`) 的 DMG 与 ZIP；Intel 机器可以在 Intel macOS 上执行 `npm run pack:mac -- --x64` 生成对应产物。当前产物未签名、未公证；正式分发时需要配置 Apple Developer ID、签名证书和公证凭证。

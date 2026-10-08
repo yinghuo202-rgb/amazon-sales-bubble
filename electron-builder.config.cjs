@@ -3,11 +3,10 @@ module.exports = {
   compression: "normal",
   win: { target: "portable", signAndEditExecutable: false },
   mac: {
-    target: [
-      { target: "dmg", arch: ["x64", "arm64"] },
-      { target: "zip", arch: ["x64", "arm64"] },
-    ],
+    target: ["dmg", "zip"],
     category: "public.app-category.business",
+    identity: null,
+    hardenedRuntime: false,
   },
   dmg: {
     title: "Amazon Sales Bubble",
