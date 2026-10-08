@@ -70,7 +70,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          npx electron-builder --config electron-builder.config.cjs --mac --x64 2>&1 | tee mac-build.log
+          npx electron-builder --config electron-builder.config.cjs --mac --x64 --dir 2>&1 | tee mac-build.log
+          app_path="$(find release-latest/mac -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" "release-latest/Amazon.Sales.Bubble.2.5.1.mac.x64.zip"
       - name: Upload macOS build log
         if: always()
         uses: actions/upload-artifact@v4
@@ -82,9 +85,12 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          tail -n 10 mac-build.log | while IFS= read -r line; do
+          {
+            grep -Ei 'error|failed|fatal|cannot|enoent|exception' mac-build.log || true
+            tail -n 20 mac-build.log
+          } | while IFS= read -r line; do
             echo "::error::$line"
-          done < mac-build.log
+          done
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
