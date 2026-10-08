@@ -110,7 +110,7 @@ npm run pack:mac
 
 ### 下载 Windows 便携版
 
-从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 Windows `Amazon.Sales.Bubble.2.4.6.exe`，或下载 macOS Apple Silicon ZIP。
+从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 Windows `Amazon.Sales.Bubble.2.4.7.exe`，或下载 macOS Intel ZIP（Apple Silicon 通过 Rosetta 运行）。
 
 其他 ERP 的接口字段和路径约定见 [通用 ERP REST 适配说明](docs/CUSTOM_ERP_ADAPTER.md)。
 

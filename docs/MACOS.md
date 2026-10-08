@@ -16,4 +16,4 @@ npm test
 npm run pack:mac
 ```
 
-GitHub Release 当前构建 Apple Silicon (`arm64`) 的 ZIP；解压后即可将 `Amazon Sales Bubble.app` 拖入“应用程序”。Intel 机器可以在 Intel macOS 上执行 `npm run pack:mac -- --x64` 生成对应产物。需要 DMG 时可在 macOS 本机执行 `npx electron-builder --config electron-builder.config.cjs --mac dmg --arm64`。当前产物未签名、未公证；正式分发时需要配置 Apple Developer ID、签名证书和公证凭证。
+GitHub Release 当前构建 Intel (`x64`) 的 ZIP；解压后即可将 `Amazon Sales Bubble.app` 拖入“应用程序”。Apple Silicon 通过 Rosetta 运行该版本。需要原生 arm64 或 DMG 时，可在对应 macOS 本机执行 `npm run pack:mac -- --arm64` 或 `npx electron-builder --config electron-builder.config.cjs --mac dmg --arm64`。当前产物未签名、未公证；正式分发时需要配置 Apple Developer ID、签名证书和公证凭证。

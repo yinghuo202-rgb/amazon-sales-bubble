@@ -38,24 +38,27 @@ jobs:
           if-no-files-found: error
 
   macos:
-    runs-on: macos-latest
+    # macos-13 is the stable hosted Intel runner. The x64 app runs on both
+    # Intel and Apple Silicon through Rosetta while native arm64 packaging is
+    # added as a separate follow-up once the hosted arm64 runner is stable.
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Verify
         run: npm test
-      - name: Build macOS Apple Silicon ZIP
+      - name: Build macOS Intel ZIP
         shell: bash
         run: |
           set -o pipefail
-          npm run pack:mac -- --arm64 2>&1 | tee mac-build.log
+          npm run pack:mac -- --x64 2>&1 | tee mac-build.log
       - name: Upload macOS build log
         if: always()
         uses: actions/upload-artifact@v4
@@ -73,7 +76,7 @@ jobs:
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-macos-arm64
+          name: release-macos-x64
           path: |
             release-latest/*.zip
           if-no-files-found: error
