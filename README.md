@@ -104,7 +104,7 @@ npm run pack
 
 ### 下载 Windows 便携版
 
-从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon Sales Bubble 2.2.1.exe`，双击即可运行，无需安装。
+从 GitHub 的 [Releases](https://github.com/yinghuo202-rgb/amazon-sales-bubble/releases) 下载 `Amazon.Sales.Bubble.2.2.1.exe`，双击即可运行，无需安装。
 
 ## 连接 GerpGo
 
