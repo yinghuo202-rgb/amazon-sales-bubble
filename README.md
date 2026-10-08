@@ -148,6 +148,7 @@ docs/                   产品需求、原生窗口和 API 清单
 
 ## 文档
 
+- [桌面通用通知胶囊需求文档（方案稿）](docs/GENERAL_NOTIFICATION_HUB_PRD.md)
 - [GerpGo API 清单](docs/GERPGO_API_INVENTORY.md)
 - [产品需求](docs/PRODUCT_REQUIREMENTS.md)
 - [原生窗口说明](docs/NATIVE_TASKBAR.md)
