@@ -30,6 +30,12 @@ jobs:
 
       - name: Build Windows portable app
         run: npm run pack
+      - name: Upload shared web bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: dist
+          if-no-files-found: error
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -38,6 +44,7 @@ jobs:
           if-no-files-found: error
 
   macos:
+    needs: windows
     # macos-15-intel is the stable hosted Intel runner. The x64 app runs on both
     # Intel and Apple Silicon through Rosetta while native arm64 packaging is
     # added as a separate follow-up once the hosted arm64 runner is stable.
@@ -52,13 +59,18 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Download shared web bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist
       - name: Verify
         run: npm test
       - name: Build macOS Intel ZIP
         shell: bash
         run: |
           set -o pipefail
-          npm run pack:mac -- --x64 2>&1 | tee mac-build.log
+          npx electron-builder --config electron-builder.config.cjs --mac --x64 2>&1 | tee mac-build.log
       - name: Upload macOS build log
         if: always()
         uses: actions/upload-artifact@v4

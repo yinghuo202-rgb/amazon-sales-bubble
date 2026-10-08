@@ -1,6 +1,6 @@
 {
   "name": "amazon-vision",
-  "version": "2.4.9",
+  "version": "2.5.0",
   "private": true,
   "description": "A quiet Amazon sales companion for Windows",
   "main": "electron/application.cjs",
