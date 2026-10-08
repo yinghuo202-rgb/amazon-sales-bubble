@@ -63,6 +63,13 @@ jobs:
           name: macos-build-log
           path: mac-build.log
           if-no-files-found: warn
+      - name: Expose macOS build error
+        if: failure()
+        shell: bash
+        run: |
+          while IFS= read -r line; do
+            echo "::error::$line"
+          done < mac-build.log
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
