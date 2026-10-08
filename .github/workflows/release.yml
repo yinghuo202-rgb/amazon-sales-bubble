@@ -52,7 +52,17 @@ jobs:
       - name: Verify
         run: npm test
       - name: Build macOS Apple Silicon DMG and ZIP
-        run: npm run pack:mac -- --arm64
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run pack:mac -- --arm64 2>&1 | tee mac-build.log
+      - name: Upload macOS build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build-log
+          path: mac-build.log
+          if-no-files-found: warn
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
