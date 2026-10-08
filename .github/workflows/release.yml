@@ -38,10 +38,10 @@ jobs:
           if-no-files-found: error
 
   macos:
-    # macos-13 is the stable hosted Intel runner. The x64 app runs on both
+    # macos-15-intel is the stable hosted Intel runner. The x64 app runs on both
     # Intel and Apple Silicon through Rosetta while native arm64 packaging is
     # added as a separate follow-up once the hosted arm64 runner is stable.
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - name: Checkout
         uses: actions/checkout@v4
